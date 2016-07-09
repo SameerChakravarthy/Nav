@@ -374,7 +374,7 @@ request = $.ajax({
 $(document).on('click','.downvotebuttonclick',function() {
 var val_text = document.getElementById("downvote_text").innerHTML;
 var val =  parseInt(val_text);
-document.getElementById("downvote_text").innerHTML = val+1;
+document.getElementById("downvote_text").innerHTML = val-1;
 var url = "<?php echo Request::root(); ?>/downvote_route";
 request = $.ajax({
         url: url,

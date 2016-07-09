@@ -55,6 +55,7 @@ Route::get('add_agen', array('before' => 'auth', function()
 	return View::make('add_agency')->with('source','mupload');
 }));
 
+/*
 Route::get('successful_register', function()
 {
 	if(Auth::user()->role!="2"){
@@ -64,7 +65,12 @@ Route::get('successful_register', function()
 		 return Redirect::to('mupload');
 	}
 });
+*/
 
+Route::get('successful_register', function()
+{
+	return View::make('successful_register');
+});
 
 Route::get('change_pwd',  array('before' => 'auth',  function()
 {

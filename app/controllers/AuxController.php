@@ -14,10 +14,13 @@ function upvote_route(){
 
 	$query = "SELECT * FROM ".$city."_".$trans."_info WHERE route = :var"; 
   	$routes = DB::select( DB::raw($query), array('var' => $route,));
+  	//DB::table($city."_".$trans."_info")->where('route', $route)->delete();
 	$quer = "REPLACE INTO ".$city."_".$trans."_info(route,views,upvotes,downvotes,created_by,verified_by,edited_by,verified_status) values(:var1,:var2,:var3,:var4,:var5,:var6,:var7,:var8)"; 
-
-   	DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views,'var3' => $routes[0]->upvotes+1,'var4' => $routes[0]->downvotes,'var5' => $routes[0]->created_by,'var6' => $routes[0]->verified_by,'var7' => $routes[0]->edited_by,$routes[0]->verified_status,)); //Update the route by incrementing upvote count
+   	//DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views,'var3' => ($routes[0]->upvotes+1),'var4' => $routes[0]->downvotes,'var5' => $routes[0]->created_by,'var6' => $routes[0]->verified_by,'var7' => $routes[0]->edited_by,$routes[0]->verified_status,)); //Update the route by incrementing upvote count
+   	DB::update('update '.$city."_".$trans.'_info set upvotes = '.($routes[0]->upvotes+1).' where route = ?', [$route]);
    	return $routes[0]->upvotes+1;
+   	//return $route." ".$routes[0]->views." ".$routes[0]->upvotes." ".$routes[0]->downvotes." ".$routes[0]->created_by." ".$routes[0]->verified_by." ".$routes[0]->edited_by." ".$routes[0]->verified_status;
+
    	
 }
 
@@ -31,7 +34,8 @@ function downvote_route(){
 	$query = "SELECT * FROM ".$city."_".$trans."_info WHERE route = :var"; 
   	$routes = DB::select( DB::raw($query), array('var' => $route,));
 	$quer = "REPLACE INTO ".$city."_".$trans."_info(route,views,upvotes,downvotes,created_by,verified_by,edited_by,verified_status) values(:var1,:var2,:var3,:var4,:var5,:var6,:var7,:var8)";
-   	DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views,'var3' => $routes[0]->upvotes,'var4' => $routes[0]->downvotes+1,'var5' => $routes[0]->created_by,'var6' => $routes[0]->verified_by,'var7' => $routes[0]->edited_by,$routes[0]->verified_status,));//Update the route by incrementing downvote count
+   	//DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views,'var3' => $routes[0]->upvotes,'var4' => $routes[0]->downvotes+1,'var5' => $routes[0]->created_by,'var6' => $routes[0]->verified_by,'var7' => $routes[0]->edited_by,$routes[0]->verified_status,));//Update the route by incrementing downvote count
+   	DB::update('update '.$city."_".$trans.'_info set downvotes = '.($routes[0]->downvotes-1).' where route = ?', [$route]);
    	return $routes[0]->downvotes+1;
 }
 
@@ -65,6 +69,107 @@ function list_route_edits(){
 	return View::make('route_edits')->with('data',$data); // Show the data using the view
 }
 
+
+function verified_data_enter(){
+	//Getting all the associated data
+	$username = Auth::user()->username;
+	$inp = Input::all();
+	$data = explode(",",$inp['select']);
+	$city = $data[0];
+	$trans = $data[1];
+	$route = $data[2];
+	$rev = $data[3];
+	$user = $data[4];
+	$op = $data[5];
+	$table = $city.'_'.$trans.'_route';	
+	$edit = DB::table('routes_edit_history')->where('city','=',$city)->where('trans','=',$trans)->where('route','=',$route)->where('revision','=',$rev)->where('edited_by','=',$user)->where('action','=',$op)->get();
+	$ids = DB::table('routes_edit_history_help')->where('ID','=',$edit[0]->ID)->get();
+	$count = sizeof($ids);
+	$input = array();
+	for($i=0;$i<$count;$i++){
+	 	$input['stop_pos'.$i] = $i+1;
+		$input['stop_name'.$i] = $ids[$i]->stop_name;
+		$input['stop_lat'.$i] = $ids[$i]->stop_lat;
+		$input['stop_lon'.$i] = $ids[$i]->stop_lon;
+		
+	}
+	if($op=="edit"){//If a route that exists is edited
+	   DB::table($table)->where('route', '=', $route)->delete(); //Delete the route which would be replaced by the new edited route
+	}
+	if($op=="edit"){//If a route that exists is edited
+				$quer = "SELECT * FROM ".$city."_".$trans."_info WHERE route = :var"; 
+  	        		$created = DB::select( DB::raw($quer), array('var' => $route,));
+  	        		$created_by = $created[0]->created_by;
+	  			 //DB::statement("REPLACE INTO ".$city."_".$trans."_info(route,created_by,edited_by) values('".$route."' ,'".$created_by."' ,'".$username."')");
+	  			//$quer = "REPLACE INTO ".$city."_".$trans."_info(route,created_by,edited_by) values(:var1,:var2,:var3)";
+   				//DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $created_by,'var3' => $username,));
+   				$query = "SELECT * FROM ".$city."_".$trans."_info WHERE route = :var";
+				$routes = DB::select( DB::raw($query), array('var' => $route,));
+				$quer = "REPLACE INTO ".$city."_".$trans."_info(route,views,upvotes,downvotes,created_by,verified_by,edited_by,verified_status) values(:var1,:var2,:var3,:var4,:var5,:var6,:var7,:var8)";//update the route info
+				DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views+1,'var3' => $routes[0]->upvotes,'var4' => $routes[0]->downvotes,'var5' => $created_by,'var6' => $username,'var7' => $username,'var8'=>1,));
+   				
+			}
+	else{
+				//DB::statement("INSERT INTO ".$city."_".$trans."_info(route,created_by,edited_by) values('".$route."' ,'".$username."' ,'".$username."')");
+   				$quer = "REPLACE INTO ".$city."_".$trans."_info(route,views,upvotes,downvotes,created_by,verified_by,edited_by,verified_status) values(:var1,:var2,:var3,:var4,:var5,:var6,:var7,:var8)";
+				DB::insert( DB::raw($quer), array('var1' => $route,'var2' => '0','var3' => '0','var4' => '0','var5' => $username,'var6' => $username,'var7' => $username,'var8'=>1,));//update the route info
+   				/*
+   				$query = "SELECT * FROM ".$city."_".$trans."_info WHERE route = :var";
+				$routes = DB::select( DB::raw($query), array('var' => $route,));
+				$quer = "REPLACE INTO ".$city."_".$trans."_info(route,views,upvotes,downvotes,created_by,verified_by,edited_by) values(:var1,:var2,:var3,:var4,:var5,:var6,:var7)";
+				DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views+1,'var3' => $routes[0]->upvotes,'var4' => $routes[0]->downvotes,'var5' => $username,'var6' => "na",'var7' => $username,));
+				*/
+	}
+	for($i=0;$i<$count;$i++){
+		$t1 = $input['stop_pos'.$i];
+		$t2 = $input['stop_name'.$i];
+		$t3 = $input['stop_lat'.$i];
+		$t4 = $input['stop_lon'.$i];
+		//echo $t1." ".$t2." ".$t3." ".$t4." ";
+		//DB::table($table)->insert(array('route' => $route, 'stop_pos' => $t1, 'stop_name' => $t2,'stop_lat' =>$t3,'stop_lon'=>$t4));				
+		$query = "SELECT stop_id FROM ".$city."_".$trans."_stop WHERE stop_name = :var"; 
+  	        $stopid = DB::select( DB::raw($query), array('var' => $t2,));
+  	         	        
+   		if(sizeof($stopid)!=1){ //stop name exists
+   			$stops_id = $price = DB::table($city."_".$trans."_stop")->max('stop_id');
+ 			$stops_id = $stops_id+1;
+   			//DB::statement("INSERT INTO ".$city."_".$trans."_route(route,stop_id,stop_pos) values('".$route."' ,'".$stops_id."' ,'".$t1."')"); 
+   			$quer = "INSERT INTO ".$city."_".$trans."_route(route,stop_id,stop_pos) values(:var1 ,:var2,'".$t1."')"; 
+  	        	DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $stops_id,));
+   			
+   				  				  			
+   			//DB::statement("REPLACE INTO ".$city."_".$trans."_stop(stop_id,stop_name,stop_lat,stop_lon) values('".$stops_id."' ,'".$t2."' ,'".$t3."' ,'".$t4."')"); 
+   			$quer = "replace INTO ".$city."_".$trans."_stop(stop_id,stop_name,stop_lat,stop_lon) values(:var1,:var2,:var3,:var4)";
+   			DB::insert( DB::raw($quer), array('var1' => $stops_id,'var2' => $t2,'var3' => $t3,'var4' => $t4,));
+   						
+   		}
+   		else{
+   			//DB::statement("INSERT INTO ".$city."_".$trans."_route(route,stop_id,stop_pos) values('".$route."' ,'".$stopid[0]->stop_id."' ,'".$t1."')"); 
+   			$quer = "INSERT INTO ".$city."_".$trans."_route(route,stop_id,stop_pos) values(:var1 ,:var2,'".$t1."')"; 
+  	        	DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $stopid[0]->stop_id,));
+   			//DB::statement("REPLACE INTO ".$city."_".$trans."_stop(stop_id,stop_name,stop_lat,stop_lon) values('".$stopid[0]->stop_id."' ,'".$t2."' ,'".$t3."' ,'".$t4."')");
+   			$quer = "replace INTO ".$city."_".$trans."_stop(stop_id,stop_name,stop_lat,stop_lon) values(:var1,:var2,:var3,:var4)";
+   			DB::insert( DB::raw($quer), array('var1' => $stopid[0]->stop_id,'var2' => $t2,'var3' => $t3,'var4' => $t4,));
+   				
+   				  						
+   			}
+	}
+	//Remove the entry from the edits history table
+	$ident = DB::table('routes_edit_history')->where('city','=',$city)->where('trans','=',$trans)->where('route','=',$route)->get();
+	foreach($ident as $id){
+		$ident = DB::table('routes_edit_history_help')->where('ID', '=', $id->ID)->get();
+		DB::table('routes_edit_history_help')->where('ID', '=', $id->ID)->delete();
+	}
+	DB::table('routes_edit_history')->where('route', '=', $route)->delete();
+	
+	//The edit is verified and committed to the database
+	echo '<script>window.alert("The edit has been Committed!");</script>';
+	return View::make('accept_edits');
+	
+	
+}
+
+/*
 //This function alters the corresponding city and transport corporation tables after verification/edits by verified members
 function verified_data_enter(){
 	//Getting all the associated data
@@ -123,6 +228,7 @@ function verified_data_enter(){
 			}
 			else{
 				//Create route and associated information
+				
    				$quer = "REPLACE INTO ".$city."_".$trans."_info(route,views,upvotes,downvotes,created_by,verified_by,edited_by,verified_status) values(:var1,:var2,:var3,:var4,:var5,:var6,:var7,:var8)";
 				DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views+1,'var3' => $routes[0]->upvotes,'var4' => $routes[0]->downvotes,'var5' => $username,'var6' => $username,'var7' => $user,'var8'=>1,));
    				
@@ -150,6 +256,7 @@ function verified_data_enter(){
 			}
 			else{
 				//Create route and associated information
+				
 				$quer = "REPLACE INTO ".$city."_".$trans."_info(route,views,upvotes,downvotes,created_by,verified_by,edited_by,verified_status) values(:var1,:var2,:var3,:var4,:var5,:var6,:var7,:var8)";
 				DB::insert( DB::raw($quer), array('var1' => $route,'var2' => $routes[0]->views+1,'var3' => $routes[0]->upvotes,'var4' => $routes[0]->downvotes,'var5' => $username,'var6' => $username,'var7' => $user,'var8'=>1,));
    				
@@ -175,6 +282,7 @@ function verified_data_enter(){
 	return View::make('accept_edits');
 
 }
+*/
 
 //Deleting an entry from the routes edit history
 function delete_route_entry_edit(){

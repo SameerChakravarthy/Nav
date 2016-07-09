@@ -405,7 +405,7 @@ function route_init1(){
 function route_finder(){
 
 	$inp = Input::all();
-	$route = $inp['route'];;
+	$route = $inp['route'];
 	$city = Session::get('city');
 	$trans = Session::get('trans');
 	$query = "SELECT * FROM ".$city."_".$trans."_info WHERE route = :var";

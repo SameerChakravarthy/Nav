@@ -30,7 +30,7 @@ foreach($routes as $route){
 <script>
   $(function() {
     var availableroute = <?php echo json_encode($routes_data)?>;
-    $( "#route" ).autocomplete({
+    $( "#routes" ).autocomplete({
       source: availableroute
     });
   });
@@ -41,8 +41,8 @@ foreach($routes as $route){
 <div id="section" style="margin-left:40px;" > 
 <h1><u> Select the route </u></h1>
 {{ Form::open(array('url'=>'main','method' => 'POST','class'=>'navbar-form navbar-left','style'=>'display:inline-block')) }}
-  {{ Form::label('routes', 'Route: ') }}
-  <input type="text" id = "routes" name="routes" required style="height:40px;width:400px;display:inline-block;">
+  {{ Form::label('route', 'Route: ') }}
+  <input type="text" id = "routes" name="route" required style="height:40px;width:400px;display:inline-block;">
   <button type="submit" class="btn btn-primary btn-md " value="Submit">Go</button>
 {{ Form::close() }}
 <br><br><br><br><h1><u> The following routes are available </u></h1><br>
